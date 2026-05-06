@@ -4,12 +4,10 @@ forex-bias-bot/
 │       └── bias.yml
 └── bias.py
 name: Forex Bias
-
 on:
   schedule:
-    - cron: '0 7 * * 1-5'  # 7:00 UTC = 8:00 NL tijd (winter)
+    - cron: '0 7 * * 1-5'
   workflow_dispatch:
-
 jobs:
   send-bias:
     runs-on: ubuntu-latest
