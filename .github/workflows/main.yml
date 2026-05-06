@@ -12,7 +12,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install anthropic twilio requests
-      - run: python bias.py
+      - run: - run: python bias.py
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
