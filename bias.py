@@ -2,12 +2,22 @@ import os
 import requests
 from anthropic import Anthropic
 from twilio.rest import Client
-from datetime import datetime
-import pytz
+from datetime import datetime, timezone, timedelta
 
 client = Anthropic()
 
-NL_TZ = pytz.timezone("Europe/Amsterdam")
+NL_OFFSET = timedelta(hours=2)  # Zomertijd UTC+2
+
+def convert_to_nl_time(date_str, time_str):
+    try:
+        if not time_str or time_str in ("All Day", "Tentative"):
+            return time_str or "?"
+        dt_str = f"{date_str} {time_str}"
+        dt_utc = datetime.strptime(dt_str, "%Y-%m-%d %I:%M%p")
+        dt_nl = dt_utc + NL_OFFSET
+        return dt_nl.strftime("%H:%M")
+    except:
+        return time_str or "?"
 
 def get_news_today():
     try:
@@ -27,7 +37,8 @@ def get_news_today():
             return "Geen high-impact nieuws vandaag voor deze pairs."
         lines = []
         for e in high_impact:
-            lines.append(f"- {e['country']} | {e['title']} om {e.get('time', '?')}")
+            nl_time = convert_to_nl_time(e.get("date", "")[:10], e.get("time", ""))
+            lines.append(f"- {e['country']} | {e['title']} | {nl_time}")
         return "\n".join(lines)
     except:
         return "Nieuwsdata niet beschikbaar."
@@ -47,24 +58,11 @@ def get_week_events():
         if not red_events:
             return "Geen red folder events deze week."
 
-        # Groepeer per dag
         from collections import defaultdict
         by_day = defaultdict(list)
         for e in red_events:
             date_str = e.get("date", "")[:10]
-            time_str = e.get("time", "")
-            # Converteer naar NL tijd
-            try:
-                if time_str and time_str != "All Day" and time_str != "Tentative":
-                    dt_str = f"{date_str} {time_str}"
-                    dt_utc = datetime.strptime(dt_str, "%Y-%m-%d %I:%M%p")
-                    dt_utc = pytz.utc.localize(dt_utc)
-                    dt_nl = dt_utc.astimezone(NL_TZ)
-                    nl_time = dt_nl.strftime("%H:%M")
-                else:
-                    nl_time = time_str or "?"
-            except:
-                nl_time = time_str or "?"
+            nl_time = convert_to_nl_time(date_str, e.get("time", ""))
             by_day[date_str].append(f"  {e['country']} | {e['title']} | {nl_time}")
 
         lines = []
